@@ -1,3 +1,86 @@
+/* ===== Tokens (design system) =====
+   Todas as cores, sombras, raios, fontes e tempos de animação do jogo ficam
+   aqui. Para mudar o visual, mude o valor do token em vez de procurar o
+   código de cor espalhado pelo arquivo. */
+:root {
+    /* --- Metal: do mais claro (relevo) ao mais escuro (frestas) --- */
+    --metal-brilho: #8792a2;   /* reflexo dos parafusos */
+    --metal-100: #5a6576;      /* topo do gradiente, bordas discretas */
+    --metal-200: #434d5c;      /* meio do gradiente */
+    --metal-300: #39424f;      /* base do gradiente */
+    --metal-400: #2a313b;      /* centro dos parafusos */
+    --metal-500: #1f252e;      /* "tela" afundada, célula aberta */
+    --metal-600: #11151b;      /* contornos e fresta entre células */
+    --metal-apagado: #2b2f36;  /* célula de bandeira errada */
+    --linha-tela: #3a4350;     /* divisória tracejada entre linhas de info */
+    --moldura: #333;           /* moldura grossa do campo */
+    --fundo-reserva: #222;     /* caso a imagem de fundo não carregue */
+
+    /* --- Texto --- */
+    --texto: #e8ecf1;
+    --texto-suave: #9aa6b5;
+
+    /* --- Destaque: amarelo de perigo --- */
+    --perigo: #f5b700;
+    --perigo-600: #c48f00;
+    --perigo-700: #8a6500;
+    --perigo-800: #4d3800;
+    --faixa-escura: #1a1a1a;   /* listra preta da faixa de perigo */
+
+    /* --- Cores semânticas dos valores --- */
+    --sucesso: #81c784;        /* vitórias, fim da barra */
+    --erro: #e57373;           /* derrotas, bandeira errada */
+    --info: #4fc3f7;           /* tempo, campos abertos, início da barra */
+    --alerta: #ff8a65;         /* bombas marcadas */
+
+    /* --- Minas --- */
+    --mina: #a52a2a;
+    --mina-fundo: #4a0f0f;
+    --explosao: #ff5252;
+    --explosao-meio: #b71c1c;
+
+    /* --- Números das células --- */
+    --numero-1: #5cc8ff;
+    --numero-2: #7ee08a;
+    --numero-3: #ff6b6b;
+    --numero-4: #c792ea;
+    --numero-5: #ffb74d;
+    --numero-6: #4dd0e1;
+    --numero-7: #f06292;
+    --numero-8: #e0e0e0;
+
+    /* --- Superfícies prontas --- */
+    --metal-gradiente: linear-gradient(145deg, var(--metal-100) 0%, var(--metal-200) 55%, var(--metal-300) 100%);
+    --faixa-perigo: repeating-linear-gradient(-45deg, var(--perigo) 0 8px, var(--faixa-escura) 8px 16px);
+    --faixa-perigo-larga: repeating-linear-gradient(-45deg, var(--perigo) 0 12px, var(--faixa-escura) 12px 24px);
+
+    /* --- Sombras --- */
+    --relevo: inset 0 2px 0 rgba(255, 255, 255, 0.18),  /* brilho em cima */
+              inset 0 -3px 0 rgba(0, 0, 0, 0.35);       /* sombra embaixo */
+    --afundado: inset 0 2px 5px rgba(0, 0, 0, 0.7);
+    --sombra-botao: 0 4px 10px rgba(0, 0, 0, 0.6);
+    --sombra-painel: 0 10px 40px rgba(0, 0, 0, 0.8);
+    --sombra-campo: 0 10px 60px rgba(0, 0, 0, 0.8);
+    --brilho-perigo: rgba(245, 183, 0, 0.35);
+    --sombra-texto: 0 2px 6px rgba(0, 0, 0, 0.9);
+
+    /* --- Raios --- */
+    --raio-celula: 4px;
+    --raio-botao: 8px;
+    --raio-painel: 18px;
+    --raio-campo: 25px;
+
+    /* --- Tipografia --- */
+    --fonte-texto: Arial, sans-serif;
+    --fonte-titulo: "Russo One", "Arial Black", sans-serif;
+    --fonte-display: monospace;
+
+    /* --- Movimento --- */
+    --dur-brilho: 0.12s;   /* hover clareando */
+    --dur-aperto: 0.08s;   /* botão/célula afundando no clique */
+    --dur-barra: 0.2s;
+}
+
 /* ===== Base ===== */
 * {
     margin: 0;
@@ -7,14 +90,15 @@
 
 body {
     min-height: 100vh;
-    font-family: Arial, sans-serif;
+    font-family: var(--fonte-texto);
     text-align: center;
-    background-color: #222; /* cor reserva caso a imagem não carregue */
+    background-color: var(--fundo-reserva);
     background-image:
         radial-gradient(ellipse at center, rgba(10, 13, 18, 0.35) 0%, rgba(10, 13, 18, 0.9) 100%), /* escurece, mais nas bordas */
         url('../img/back.jpg');
     background-size: auto, 800px auto;
     background-attachment: fixed;
+    overflow-x: hidden; /* quem rola de lado é só o campo (.board-wrap) */
 }
 
 /* ===== Topo: título centralizado e dificuldades logo abaixo ===== */
@@ -27,16 +111,16 @@ body {
 }
 
 h1 {
-    font-family: "Russo One", "Arial Black", sans-serif;
+    font-family: var(--fonte-titulo);
     font-size: 54px;
     letter-spacing: 4px;
     text-transform: uppercase;
-    color: #e8ecf1;
+    color: var(--texto);
     /* relevo de metal: brilho em cima, várias camadas escuras embaixo */
     text-shadow: 0 -1px 0 rgba(255, 255, 255, 0.4),
-                 0 2px 0 #5a6576,
-                 0 4px 0 #39424f,
-                 0 6px 0 #1f252e,
+                 0 2px 0 var(--metal-100),
+                 0 4px 0 var(--metal-300),
+                 0 6px 0 var(--metal-500),
                  0 10px 15px rgba(0, 0, 0, 0.9);
 }
 
@@ -47,18 +131,18 @@ h1::after {
     height: 10px;
     margin-top: 12px;
     border-radius: 3px;
-    background: repeating-linear-gradient(-45deg, #f5b700 0 12px, #1a1a1a 12px 24px);
+    background: var(--faixa-perigo-larga);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
 }
 
 .minado {
-    color: #f5b700;
+    color: var(--perigo);
     text-shadow: 0 -1px 0 rgba(255, 255, 255, 0.4),
-                 0 2px 0 #c48f00,
-                 0 4px 0 #8a6500,
-                 0 6px 0 #4d3800,
+                 0 2px 0 var(--perigo-600),
+                 0 4px 0 var(--perigo-700),
+                 0 6px 0 var(--perigo-800),
                  0 10px 15px rgba(0, 0, 0, 0.9),
-                 0 0 25px rgba(245, 183, 0, 0.35);
+                 0 0 25px var(--brilho-perigo);
 }
 #dificuldades {
     display: flex;
@@ -68,22 +152,21 @@ h1::after {
 }
 
 /* Botões de metal (mesmo estilo das células) */
-.dificuldade,#restart {
+.dificuldade,
+#restart {
     padding: 10px 20px;
     font-size: 14px;
     font-weight: bold;
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: #e8ecf1;
+    color: var(--texto);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
     cursor: pointer;
-    border: 2px solid #11151b;
-    border-radius: 8px;
-    background: linear-gradient(145deg, #5a6576 0%, #434d5c 55%, #39424f 100%);
-    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18),  /* brilho em cima */
-                inset 0 -3px 0 rgba(0, 0, 0, 0.35),       /* sombra embaixo */
-                0 4px 10px rgba(0, 0, 0, 0.6);            /* sombra externa */
-    transition: filter 0.12s, transform 0.08s;
+    border: 2px solid var(--metal-600);
+    border-radius: var(--raio-botao);
+    background: var(--metal-gradiente);
+    box-shadow: var(--relevo), var(--sombra-botao);
+    transition: filter var(--dur-brilho), transform var(--dur-aperto);
 }
 
 .dificuldade:hover,
@@ -99,29 +182,30 @@ h1::after {
 
 /* Nível escolhido: metal afundado com detalhe amarelo */
 .dificuldade.ativa {
-    color: #f5b700;
-    background: #1f252e;
-    border-color: #f5b700;
+    color: var(--perigo);
+    background: var(--metal-500);
+    border-color: var(--perigo);
     box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7),
-                0 0 10px rgba(245, 183, 0, 0.35);
+                0 0 10px var(--brilho-perigo);
 }
 
 .dificuldade.ativa:hover {
     filter: none;
 }
 
-/* ===== Área do jogo: 3 colunas [timer] [campo] [vazio] — o campo fica no centro ===== */
+/* ===== Área do jogo: 3 colunas [placar] [campo] [informações] ===== */
 .area-jogo {
     display: grid;
-    grid-template-columns: 1fr auto minmax(0, 1fr);
+    grid-template-columns: 1fr auto 1fr;
     align-items: start;
     gap: 30px;
     padding: 20px;
 }
 
-/* Coluna da esquerda: timer, mensagem e botão centralizados entre si */
+/* Coluna da esquerda: placar, mensagem e botões centralizados entre si */
 .lateral {
     grid-column: 1;
+    grid-row: 1;
     justify-self: end;
     display: flex;
     flex-direction: column;
@@ -129,37 +213,64 @@ h1::after {
     gap: 15px;
 }
 
-/* ===== Painel de tempo ===== */
+.board-wrap {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+/* Coluna da direita: painel de informações da partida */
+.lateral-direita {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: start;
+}
+
+/* Quando o campo não cabe entre os dois painéis (o JS liga a classe
+   "empilhado"), os painéis ficam lado a lado em cima e o campo embaixo */
+.area-jogo.empilhado {
+    grid-template-columns: 1fr 1fr;
+}
+
+.empilhado .board-wrap {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+}
+
+.empilhado .lateral-direita {
+    grid-column: 2;
+}
+
+/* ===== Painéis (placar e informações) ===== */
 /* placa de metal com uma "tela" escura afundada dentro */
-#painel-tempo {
+.painel {
     position: relative;
-    min-width: 300px;
-    padding: 18px 20px 50px;
-    color: #e8ecf1;
+    min-width: 260px;
+    padding: 18px 20px 30px;
+    color: var(--texto);
     text-align: left;
-    border: 2px solid #11151b;
-    border-radius: 18px;
-    background: linear-gradient(145deg, #5a6576 0%, #434d5c 55%, #39424f 100%);
-    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18),  /* brilho em cima */
-                inset 0 -3px 0 rgba(0, 0, 0, 0.35),       /* sombra embaixo */
-                0 10px 40px rgba(0, 0, 0, 0.8);           /* sombra externa */
+    border: 2px solid var(--metal-600);
+    border-radius: var(--raio-painel);
+    background: var(--metal-gradiente);
+    box-shadow: var(--relevo), var(--sombra-painel);
 }
 
 /* parafusos nos 4 cantos */
-#painel-tempo::before {
+.painel::before {
+    --parafuso: radial-gradient(circle at 5px 5px, var(--metal-400) 2px, var(--metal-brilho) 3px, transparent 4px);
     content: "";
     position: absolute;
     inset: 8px;
     pointer-events: none;
     background:
-        radial-gradient(circle at 5px 5px, #2a313b 2px, #8792a2 3px, transparent 4px) top left / 10px 10px no-repeat,
-        radial-gradient(circle at 5px 5px, #2a313b 2px, #8792a2 3px, transparent 4px) top right / 10px 10px no-repeat,
-        radial-gradient(circle at 5px 5px, #2a313b 2px, #8792a2 3px, transparent 4px) bottom left / 10px 10px no-repeat,
-        radial-gradient(circle at 5px 5px, #2a313b 2px, #8792a2 3px, transparent 4px) bottom right / 10px 10px no-repeat;
+        var(--parafuso) top left / 10px 10px no-repeat,
+        var(--parafuso) top right / 10px 10px no-repeat,
+        var(--parafuso) bottom left / 10px 10px no-repeat,
+        var(--parafuso) bottom right / 10px 10px no-repeat;
 }
 
-#painel-tempo h2 {
-    font-family: "Russo One", "Arial Black", sans-serif;
+.painel h2 {
+    font-family: var(--fonte-titulo);
     font-size: 20px;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -168,7 +279,7 @@ h1::after {
     text-shadow: 0 2px 3px rgba(0, 0, 0, 0.8);
 }
 
-.tempo {
+.info {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -176,33 +287,87 @@ h1::after {
     padding: 10px 14px;
     font-size: 15px;
     font-weight: bold;
-    color: #9aa6b5;
-    background: #1f252e; /* tela afundada */
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.7);
+    color: var(--texto-suave);
+    background: var(--metal-500); /* tela afundada */
+    box-shadow: var(--afundado);
 }
 
-.tempo:first-of-type { border-radius: 8px 8px 0 0; }
-.tempo:last-of-type { border-radius: 0 0 8px 8px; }
+/* primeira e última linha de cada painel com cantos arredondados */
+.info:not(.info + .info) { border-top-left-radius: var(--raio-botao); border-top-right-radius: var(--raio-botao); }
+.info:not(:has(+ .info)) { border-bottom-left-radius: var(--raio-botao); border-bottom-right-radius: var(--raio-botao); }
 
-.tempo + .tempo {
-    border-top: 1px dashed #3a4350;
+/* nível do placar, logo abaixo do título */
+.subtitulo {
+    margin: -6px 0 10px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--perigo);
 }
 
-.tempo strong {
-    font-family: monospace;
+.rodape-painel {
+    margin-top: 12px;
+    text-align: center;
+}
+
+.info + .info {
+    border-top: 1px dashed var(--linha-tela);
+}
+
+.info strong {
+    font-family: var(--fonte-display);
     font-size: 20px;
+    white-space: nowrap;
     text-shadow: 0 0 8px currentColor; /* brilho de display */
 }
 
-#tempo-atual { color: #4fc3f7; }
-#tempo-melhor { color: #81c784; }
-#tempo-pior { color: #e57373; }
+#tempo-atual { color: var(--info); }
+#vitorias { color: var(--sucesso); }
+#derrotas { color: var(--erro); }
+#aproveitamento { color: var(--texto); }
+#campos-abertos { color: var(--info); }
+#bombas-marcadas { color: var(--alerta); }
+#bombas-restantes { color: var(--perigo); }
+
+/* Barra de progresso dos campos abertos */
+.progresso {
+    height: 8px;
+    margin-top: 14px;
+    border-radius: var(--raio-celula);
+    background: var(--metal-500);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+}
+
+#barra-progresso {
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--info), var(--sucesso));
+    transition: width var(--dur-barra);
+}
+
+/* Botão discreto para zerar vitórias/derrotas */
+#zerar-placar {
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--texto-suave);
+    background: none;
+    border: 1px solid var(--metal-100);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+#zerar-placar:hover {
+    color: var(--texto);
+    border-color: var(--texto-suave);
+}
 
 /* ===== Mensagem e botão ===== */
 #status {
     font-size: 20px;
     color: white;
-    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+    text-shadow: var(--sombra-texto);
 }
 
 #status:empty {
@@ -213,17 +378,41 @@ h1::after {
     font-size: 16px; /* um pouco maior que os de dificuldade */
 }
 
+.botoes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Texto de ajuda com os controles */
+.ajuda {
+    max-width: 340px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--texto-suave);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
 /* ===== Tabuleiro ===== */
+/* Envolve o campo: se ele não couber nem com as células no tamanho mínimo,
+   rola de lado aqui dentro em vez de alargar a página inteira */
+.board-wrap {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 10px; /* espaço para a barra de rolagem não cobrir o campo */
+}
+
 #board {
     display: grid;
-    grid-column: 2;
     gap: 2px;
     width: max-content;
     padding: 4px;
-    background: #11151b; /* fresta escura entre as placas */
-    border: 18px solid #333;
-    border-radius: 25px;
-    box-shadow: 0 10px 60px rgba(0, 0, 0, 0.8),       /* sombra externa */
+    background: var(--metal-600); /* fresta escura entre as placas */
+    border: 18px solid var(--moldura);
+    border-radius: var(--raio-campo);
+    box-shadow: var(--sombra-campo),                  /* sombra externa */
                 inset 0 3px 10px rgba(0, 0, 0, 0.9);  /* sombra interna */
 }
 
@@ -234,14 +423,16 @@ h1::after {
     justify-content: center;
     width: 100%;
     height: 100%;
-    border-radius: 4px;
-    background: linear-gradient(145deg, #5a6576 0%, #434d5c 55%, #39424f 100%);
-    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18),  /* brilho em cima */
-                inset 0 -3px 0 rgba(0, 0, 0, 0.35);       /* sombra embaixo */
+    border-radius: var(--raio-celula);
+    background: var(--metal-gradiente);
+    box-shadow: var(--relevo);
     font-weight: bold;
     cursor: pointer;
     user-select: none;
-    transition: filter 0.12s, transform 0.08s;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none; /* sem menu do iOS no toque longo */
+    touch-action: manipulation;  /* sem zoom no toque duplo */
+    transition: filter var(--dur-brilho), transform var(--dur-aperto);
 }
 
 .cell:hover {
@@ -256,7 +447,7 @@ h1::after {
 .revealed,
 .revealed:hover,
 .revealed:active {
-    background: #1f252e;
+    background: var(--metal-500);
     box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
     filter: none;
     transform: none;
@@ -264,40 +455,82 @@ h1::after {
 }
 
 /* Cores dos números */
-.cell[data-n="1"] { color: #5cc8ff; }
-.cell[data-n="2"] { color: #7ee08a; }
-.cell[data-n="3"] { color: #ff6b6b; }
-.cell[data-n="4"] { color: #c792ea; }
-.cell[data-n="5"] { color: #ffb74d; }
-.cell[data-n="6"] { color: #4dd0e1; }
-.cell[data-n="7"] { color: #f06292; }
-.cell[data-n="8"] { color: #e0e0e0; }
+.cell[data-n="1"] { color: var(--numero-1); }
+.cell[data-n="2"] { color: var(--numero-2); }
+.cell[data-n="3"] { color: var(--numero-3); }
+.cell[data-n="4"] { color: var(--numero-4); }
+.cell[data-n="5"] { color: var(--numero-5); }
+.cell[data-n="6"] { color: var(--numero-6); }
+.cell[data-n="7"] { color: var(--numero-7); }
+.cell[data-n="8"] { color: var(--numero-8); }
 
 .mine,
 .mine:hover {
-    background: radial-gradient(circle, #a52a2a 0%, #4a0f0f 100%);
+    background: radial-gradient(circle, var(--mina) 0%, var(--mina-fundo) 100%);
+}
+
+/* A mina que foi clicada */
+.explodiu,
+.explodiu:hover {
+    background: radial-gradient(circle, var(--explosao) 0%, var(--explosao-meio) 70%, var(--mina-fundo) 100%);
+    box-shadow: 0 0 14px 3px rgba(255, 82, 82, 0.8);
+}
+
+/* Bandeira colocada onde não havia mina (mostrada ao perder) */
+.flag-errada,
+.flag-errada:hover {
+    background: var(--metal-apagado);
+    box-shadow: inset 0 0 0 2px var(--erro);
 }
 
 /* Bandeira: faixa de perigo amarelo e preto */
 .flag,
 .flag:hover {
-    background: repeating-linear-gradient(-45deg, #f5b700 0 8px, #1a1a1a 8px 16px);
+    background: var(--faixa-perigo);
     box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.45);
     text-shadow: 0 2px 3px rgba(0, 0, 0, 0.8);
 }
 
-/* ===== Tela estreita: timer em cima e campo embaixo ===== */
-@media (max-width: 1100px) {
-    .area-jogo {
-        grid-template-columns: 1fr;
-        justify-items: center;
+/* ===== Celular: tudo numa coluna só (placar, informações, campo) ===== */
+@media (max-width: 640px) {
+    h1 {
+        font-size: 34px;
+        letter-spacing: 2px;
     }
 
-    .lateral {
+    .area-jogo,
+    .area-jogo.empilhado {
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: center;
+        padding: 12px;
+        gap: 20px;
+    }
+
+    .lateral,
+    .empilhado .lateral-direita,
+    .lateral-direita {
+        grid-column: 1;
+        grid-row: auto;
         justify-self: center;
+        width: 100%;
+        max-width: 360px;
+    }
+
+    /* campo por último, logo abaixo do painel da partida */
+    .empilhado .board-wrap,
+    .board-wrap {
+        grid-column: 1;
+        grid-row: auto;
+        order: 1;
+    }
+
+    .painel {
+        min-width: 0;
+        width: 100%;
     }
 
     #board {
-        grid-column: 1;
+        border-width: 8px;
+        border-radius: 14px;
     }
 }
