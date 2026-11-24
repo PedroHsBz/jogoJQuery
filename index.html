@@ -21,7 +21,8 @@
          *      $("seletor")          seleciona elementos (igual ao CSS)
          *      $("<div>")            cria um elemento novo
          *      .text(valor)          troca o texto do elemento
-         *      .attr(nome, valor)    lê ou grava um atributo (ex.: data-linha)
+         *      .attr(nome, valor)    lê ou grava um atributo (null apaga)
+         *      .data()               lê os atributos data-* já convertidos
          *      .addClass/.removeClass/.toggleClass  mexe nas classes CSS
          *      .css({...})           aplica estilos direto no elemento
          *      .empty()              remove todos os filhos
@@ -33,28 +34,13 @@
 
             // ---------- Configuração ----------
 
-            // Níveis de dificuldade: linhas × colunas, quantidade de minas
-            // e tamanho MÁXIMO de cada célula em pixels (em telas menores
-            // as células encolhem para o campo caber; veja ajustarTamanho)
+            // Linhas × colunas, quantidade de minas e tamanho MÁXIMO de cada
+            // célula em pixels (em telas menores as células encolhem para o
+            // campo caber; veja ajustarTamanho)
             const niveis = {
-                iniciante: {
-                    linhas: 9,
-                    colunas: 9,
-                    minas: 10,
-                    tamanho: 75
-                },
-                intermediario: {
-                    linhas: 16,
-                    colunas: 16,
-                    minas: 40,
-                    tamanho: 41
-                },
-                especialista: {
-                    linhas: 16,
-                    colunas: 30,
-                    minas: 99,
-                    tamanho: 38
-                }
+                iniciante:     { linhas: 9,  colunas: 9,  minas: 10, tamanho: 75 },
+                intermediario: { linhas: 16, colunas: 16, minas: 40, tamanho: 41 },
+                especialista:  { linhas: 16, colunas: 30, minas: 99, tamanho: 38 }
             };
 
             const TAMANHO_MINIMO = 24; // abaixo disso fica difícil de clicar; o campo rola
@@ -64,19 +50,16 @@
 
             // ---------- Estado do jogo ----------
 
-            let linhas, colunas, totalMinas;
-            let nivelAtual;
-            let tabuleiro = []; // matriz [linha][coluna] com os dados de cada célula
+            let linhas, colunas, totalMinas, nivelAtual;
+            // Matriz [linha][coluna]. Cada célula é um objeto:
+            //   { lin, col, mina, revelada, bandeira, vizinhos, el }
+            // onde "el" é o elemento jQuery dela na tela.
+            let tabuleiro = [];
             let fimDeJogo = false;
             let minasColocadas = false; // as minas só são sorteadas no 1º clique
             let reveladas = 0; // quantas células sem mina já foram abertas
             let bandeiras = 0; // quantas bandeiras estão no campo
 
-            // Timer
-            let inicioJogo = null; // momento do primeiro clique (null = timer parado)
-            let intervaloTimer = null; // id do setInterval que atualiza a tela
-
-            // Aplica as configurações do nível escolhido
             function definirNivel(nivel) {
                 nivelAtual = nivel;
                 linhas = niveis[nivel].linhas;
@@ -84,64 +67,38 @@
                 totalMinas = niveis[nivel].minas;
             }
 
-            // Lista as posições [linha, coluna] das até 8 células ao redor
-            function vizinhas(lin, col) {
+            // Todas as células numa lista só (flat "achata" a matriz)
+            function todasCelulas() {
+                return tabuleiro.flat();
+            }
+
+            // As até 8 células ao redor. tabuleiro[lin]?.[col] dá undefined
+            // quando a posição sai do campo, então as bordas se resolvem sozinhas.
+            function vizinhas(celula) {
                 const lista = [];
-                for (let dLin = -1; dLin <= 1; dLin++) {
-                    for (let dCol = -1; dCol <= 1; dCol++) {
-                        const nLin = lin + dLin,
-                            nCol = col + dCol;
-                        if ((dLin || dCol) && nLin >= 0 && nLin < linhas && nCol >= 0 && nCol < colunas) {
-                            lista.push([nLin, nCol]);
-                        }
+                for (let lin = celula.lin - 1; lin <= celula.lin + 1; lin++) {
+                    for (let col = celula.col - 1; col <= celula.col + 1; col++) {
+                        const outra = tabuleiro[lin]?.[col];
+                        if (outra && outra !== celula) lista.push(outra);
                     }
                 }
                 return lista;
-            }
-
-            // ---------- Timer ----------
-
-            // Formata segundos para exibir (ex.: 12.3s)
-            function formatarTempo(segundos) {
-                return segundos.toFixed(1) + "s";
-            }
-
-            // Começa a contar o tempo.
-            // A cada 100ms, $("#tempo-atual").text(...) atualiza o número na tela.
-            function iniciarTimer() {
-                inicioJogo = Date.now();
-                intervaloTimer = setInterval(function() {
-                    const segundos = (Date.now() - inicioJogo) / 1000;
-                    $("#tempo-atual").text(formatarTempo(segundos));
-                }, 100);
-            }
-
-            // Para o timer e devolve o tempo total em segundos
-            function pararTimer() {
-                clearInterval(intervaloTimer);
-                intervaloTimer = null;
-                if (inicioJogo === null) return 0;
-                const segundos = (Date.now() - inicioJogo) / 1000;
-                inicioJogo = null;
-                $("#tempo-atual").text(formatarTempo(segundos));
-                return segundos;
             }
 
             // ---------- Placar de vitórias e derrotas ----------
 
             // O placar fica salvo no próprio navegador (localStorage), separado
             // por nível: { iniciante: { vitorias: 3, derrotas: 5 }, ... }.
-            // Assim ele continua lá depois de recarregar a página, sem precisar
-            // de banco de dados. O try/catch cobre navegadores que bloqueiam o
-            // localStorage (ex.: janela anônima): o jogo funciona, só não guarda.
+            // O try/catch cobre navegadores que bloqueiam o localStorage
+            // (ex.: janela anônima): o jogo funciona, só não guarda.
             const CHAVE_PLACAR = "campoMinado.placar";
 
             function lerPlacar() {
-                const placar = {};
                 let salvo = {};
                 try {
                     salvo = JSON.parse(localStorage.getItem(CHAVE_PLACAR)) || {};
                 } catch (e) {}
+                const placar = {};
                 for (const nivel in niveis) {
                     placar[nivel] = {
                         vitorias: Number(salvo[nivel]?.vitorias) || 0,
@@ -159,17 +116,11 @@
                 } catch (e) {}
             }
 
-            // Mostra vitórias, derrotas e aproveitamento do nível atual
+            // Mostra vitórias e derrotas do nível atual
             function exibirPlacar() {
-                const {
-                    vitorias,
-                    derrotas
-                } = placar[nivelAtual];
                 $("#nome-nivel").text($(`.dificuldade[data-nivel=${nivelAtual}]`).text());
-                const partidas = vitorias + derrotas;
-                $("#vitorias").text(vitorias);
-                $("#derrotas").text(derrotas);
-                $("#aproveitamento").text(partidas === 0 ? "--" : Math.round(100 * vitorias / partidas) + "%");
+                $("#vitorias").text(placar[nivelAtual].vitorias);
+                $("#derrotas").text(placar[nivelAtual].derrotas);
             }
 
             // Soma 1 em "vitorias" ou "derrotas" do nível atual
@@ -179,7 +130,7 @@
                 exibirPlacar();
             }
 
-            // ---------- Tabuleiro ----------
+            // ---------- Tela ----------
 
             // Calcula o tamanho das células para o campo caber na largura da tela.
             // Usa o tamanho do nível como máximo e TAMANHO_MINIMO como mínimo
@@ -224,20 +175,46 @@
                 $("#barra-progresso").css("width", (100 * reveladas / semMina) + "%");
             }
 
-            // Monta um tabuleiro novo.
-            //   .empty()  apaga as células do jogo anterior
-            //   $("<div>") cria cada célula; .attr guarda a posição em data-linha/data-coluna
-            //   .append() coloca a célula dentro do #board
-            // O elemento jQuery de cada célula fica guardado em tabuleiro[lin][col].el,
-            // assim não é preciso procurá-lo no DOM a cada jogada.
+            // Pinta uma célula a partir do estado dela. TODA mudança visual de
+            // célula passa por aqui: as jogadas só mudam o estado e chamam desenhar.
+            //   bandeira          -> 🚩 (ou ❌ se o jogo acabou e não era mina)
+            //   revelada com mina -> 💣
+            //   revelada          -> número (data-n define a cor no CSS) ou vazia
+            function desenhar(celula) {
+                const errada = celula.bandeira && fimDeJogo && !celula.mina;
+                let texto = "", rotulo = "fechada";
+                if (celula.bandeira) {
+                    texto = errada ? "❌" : "🚩";
+                    rotulo = errada ? "bandeira errada" : "bandeira";
+                } else if (celula.revelada && celula.mina) {
+                    texto = "💣";
+                    rotulo = "mina";
+                } else if (celula.revelada) {
+                    texto = celula.vizinhos || "";
+                    rotulo = celula.vizinhos || "vazia";
+                }
+                celula.el
+                    .text(texto)
+                    .attr({
+                        "aria-label": rotulo,
+                        "data-n": (celula.revelada && !celula.mina && celula.vizinhos) || null
+                    })
+                    .toggleClass("revealed", celula.revelada)
+                    .toggleClass("mine", celula.revelada && celula.mina)
+                    .toggleClass("flag", celula.bandeira)
+                    .toggleClass("flag-errada", errada);
+            }
+
+            // ---------- Tabuleiro ----------
+
+            // Monta um tabuleiro novo: apaga as células antigas com .empty(),
+            // cria cada célula com $("<div>") e guarda a posição em data-linha/data-coluna.
             function iniciarTabuleiro() {
                 tabuleiro = [];
                 fimDeJogo = false;
                 minasColocadas = false;
                 reveladas = 0;
                 bandeiras = 0;
-                pararTimer();
-                $("#tempo-atual").text(formatarTempo(0));
                 atualizarInfo();
                 exibirPlacar();
                 $("#status").text("");
@@ -246,180 +223,119 @@
                 for (let lin = 0; lin < linhas; lin++) {
                     tabuleiro[lin] = [];
                     for (let col = 0; col < colunas; col++) {
-                        const celula = $("<div>")
-                            .addClass("cell")
-                            .attr({
-                                "data-linha": lin,
-                                "data-coluna": col,
-                                "aria-label": "fechada"
-                            });
-                        tabuleiro[lin][col] = {
-                            mina: false,
-                            revelada: false,
-                            bandeira: false,
-                            vizinhos: 0,
-                            el: celula
-                        };
-                        $board.append(celula);
+                        const el = $("<div>").addClass("cell").attr({ "data-linha": lin, "data-coluna": col });
+                        const celula = { lin, col, mina: false, revelada: false, bandeira: false, vizinhos: 0, el };
+                        tabuleiro[lin][col] = celula;
+                        desenhar(celula);
+                        $board.append(el);
                     }
                 }
             }
 
             // Sorteia as minas no 1º clique, deixando livres a célula clicada
             // e as 8 em volta — assim o primeiro clique nunca perde e sempre abre uma área.
-            function colocarMinas(linSegura, colSegura) {
-                const candidatas = [];
-                for (let lin = 0; lin < linhas; lin++) {
-                    for (let col = 0; col < colunas; col++) {
-                        if (Math.abs(lin - linSegura) > 1 || Math.abs(col - colSegura) > 1) {
-                            candidatas.push([lin, col]);
-                        }
-                    }
-                }
+            // Depois conta, para cada célula, quantas minas há ao redor.
+            function colocarMinas(segura) {
+                const candidatas = todasCelulas().filter(c =>
+                    Math.abs(c.lin - segura.lin) > 1 || Math.abs(c.col - segura.col) > 1);
                 // embaralha só o começo da lista (Fisher-Yates parcial) e pega as primeiras
                 for (let i = 0; i < totalMinas; i++) {
                     const j = i + Math.floor(Math.random() * (candidatas.length - i));
                     [candidatas[i], candidatas[j]] = [candidatas[j], candidatas[i]];
-                    const [lin, col] = candidatas[i];
-                    tabuleiro[lin][col].mina = true;
+                    candidatas[i].mina = true;
                 }
-                calcularVizinhos();
+                todasCelulas().forEach(c => c.vizinhos = vizinhas(c).filter(v => v.mina).length);
                 minasColocadas = true;
-            }
-
-            // Para cada célula sem mina, conta quantas minas existem nas 8 vizinhas
-            function calcularVizinhos() {
-                for (let lin = 0; lin < linhas; lin++) {
-                    for (let col = 0; col < colunas; col++) {
-                        tabuleiro[lin][col].vizinhos = vizinhas(lin, col)
-                            .filter(([nLin, nCol]) => tabuleiro[nLin][nCol].mina).length;
-                    }
-                }
             }
 
             // ---------- Jogadas ----------
 
-            // Revela uma célula.
-            //   Mina   -> perde o jogo
-            //   Número -> mostra o número (data-n define a cor no CSS)
-            //   Vazia  -> revela as vizinhas automaticamente.
-            // A expansão usa uma pilha em vez de recursão: cada célula vazia
-            // empilha as vizinhas, e o laço continua até a pilha esvaziar.
-            function revelarCelula(lin, col) {
-                const inicial = tabuleiro[lin][col];
+            // Revela uma célula. Mina -> perde. Vazia (0 minas ao redor) ->
+            // revela as vizinhas também. A expansão usa uma pilha em vez de
+            // recursão: cada célula vazia empilha as vizinhas, e o laço continua
+            // até a pilha esvaziar.
+            function revelarCelula(inicial) {
                 if (inicial.revelada || inicial.bandeira || fimDeJogo) return;
                 if (inicial.mina) {
-                    perder(lin, col);
+                    perder(inicial);
                     return;
                 }
-                const pilha = [
-                    [lin, col]
-                ];
+                const pilha = [inicial];
                 while (pilha.length > 0) {
-                    const [l, c] = pilha.pop();
-                    const dados = tabuleiro[l][c];
-                    if (dados.revelada || dados.bandeira) continue;
-                    dados.revelada = true;
+                    const celula = pilha.pop();
+                    if (celula.revelada || celula.bandeira) continue;
+                    celula.revelada = true;
                     reveladas++;
-                    dados.el.addClass("revealed");
-                    if (dados.vizinhos > 0) {
-                        dados.el.text(dados.vizinhos).attr({
-                            "data-n": dados.vizinhos,
-                            "aria-label": dados.vizinhos
-                        });
-                    } else {
-                        dados.el.attr("aria-label", "vazia");
-                        pilha.push(...vizinhas(l, c));
-                    }
+                    desenhar(celula);
+                    if (celula.vizinhos === 0) pilha.push(...vizinhas(celula));
                 }
-                atualizarInfo();
-                verificarVitoria();
             }
 
             // Clique num número já aberto: se ao redor já há tantas bandeiras
             // quanto o número, abre de uma vez todas as vizinhas sem bandeira.
-            function abrirVizinhas(lin, col) {
-                const dados = tabuleiro[lin][col];
-                if (!dados.revelada || dados.vizinhos === 0 || fimDeJogo) return;
-                const ao_redor = vizinhas(lin, col);
-                const marcadas = ao_redor.filter(([l, c]) => tabuleiro[l][c].bandeira).length;
-                if (marcadas !== dados.vizinhos) return;
-                ao_redor.forEach(([l, c]) => revelarCelula(l, c));
+            function abrirVizinhas(celula) {
+                const aoRedor = vizinhas(celula);
+                const marcadas = aoRedor.filter(v => v.bandeira).length;
+                if (celula.vizinhos > 0 && marcadas === celula.vizinhos) aoRedor.forEach(revelarCelula);
             }
 
-            // Marca/desmarca bandeira (classe "flag" no CSS + emoji 🚩)
-            function alternarBandeira(lin, col) {
-                const dados = tabuleiro[lin][col];
-                if (dados.revelada || fimDeJogo) return;
-                dados.bandeira = !dados.bandeira;
-                bandeiras += dados.bandeira ? 1 : -1;
-                dados.el
-                    .toggleClass("flag", dados.bandeira)
-                    .text(dados.bandeira ? "🚩" : "")
-                    .attr("aria-label", dados.bandeira ? "bandeira" : "fechada");
+            function alternarBandeira(celula) {
+                if (celula.revelada || fimDeJogo) return;
+                celula.bandeira = !celula.bandeira;
+                bandeiras += celula.bandeira ? 1 : -1;
+                desenhar(celula);
                 atualizarInfo();
             }
 
-            // Derrota: mostra todas as minas. A que explodiu fica destacada,
-            // bandeiras certas continuam e bandeiras erradas ganham um ❌.
-            function perder(linExplodiu, colExplodiu) {
+            // Derrota: mostra todas as minas sem bandeira e redesenha o campo
+            // (com fimDeJogo ligado, desenhar troca bandeiras erradas por ❌).
+            // A mina que explodiu fica destacada.
+            function perder(explodiu) {
                 fimDeJogo = true;
-                pararTimer();
                 $("#status").text("💥 Você perdeu!");
                 registrarResultado("derrotas");
-                for (let lin = 0; lin < linhas; lin++) {
-                    for (let col = 0; col < colunas; col++) {
-                        const dados = tabuleiro[lin][col];
-                        if (dados.mina && !dados.bandeira) {
-                            dados.el.addClass("revealed mine").text("💣").attr("aria-label", "mina");
-                        } else if (!dados.mina && dados.bandeira) {
-                            dados.el.addClass("flag-errada").text("❌").attr("aria-label", "bandeira errada");
-                        }
-                    }
-                }
-                tabuleiro[linExplodiu][colExplodiu].el.addClass("explodiu");
+                todasCelulas().forEach(function(celula) {
+                    if (celula.mina && !celula.bandeira) celula.revelada = true;
+                    desenhar(celula);
+                });
+                explodiu.el.addClass("explodiu");
             }
 
             // Vitória = todas as células sem mina foram reveladas.
-            // Marca as minas que faltavam, para o timer e salva o tempo no banco.
+            // Põe bandeira nas minas que faltavam.
             function verificarVitoria() {
                 if (fimDeJogo || reveladas !== linhas * colunas - totalMinas) return;
                 fimDeJogo = true;
-                const segundos = pararTimer();
-                for (let lin = 0; lin < linhas; lin++) {
-                    for (let col = 0; col < colunas; col++) {
-                        const dados = tabuleiro[lin][col];
-                        if (dados.mina && !dados.bandeira) {
-                            dados.bandeira = true;
-                            dados.el.addClass("flag").text("🚩").attr("aria-label", "bandeira");
-                        }
+                todasCelulas().forEach(function(celula) {
+                    if (celula.mina && !celula.bandeira) {
+                        celula.bandeira = true;
+                        desenhar(celula);
                     }
-                }
+                });
                 bandeiras = totalMinas;
-                atualizarInfo();
-                $("#status").text("🎉 Você venceu em " + formatarTempo(segundos) + "!");
+                $("#status").text("🎉 Você venceu!");
                 registrarResultado("vitorias");
             }
 
-            // Jogada principal (clique ou toque).
-            function jogar(lin, col) {
-                if (fimDeJogo) return;
-                const dados = tabuleiro[lin][col];
-                if (dados.revelada) {
-                    abrirVizinhas(lin, col);
-                    return;
+            // Jogada principal (clique ou toque). Os contadores e a vitória
+            // são conferidos uma vez só, no fim da jogada.
+            function jogar(celula) {
+                if (fimDeJogo || celula.bandeira) return; // bandeira protege a célula
+                if (celula.revelada) {
+                    abrirVizinhas(celula);
+                } else {
+                    if (!minasColocadas) colocarMinas(celula);
+                    revelarCelula(celula);
                 }
-                if (dados.bandeira) return; // bandeira protege a célula (e não inicia o tempo)
-                if (!minasColocadas) {
-                    colocarMinas(lin, col);
-                    iniciarTimer(); // o tempo começa no 1º clique
-                }
-                revelarCelula(lin, col);
+                verificarVitoria();
+                atualizarInfo();
             }
 
-            // Lê a posição guardada em data-linha/data-coluna
-            function posicao(celula) {
-                return [parseInt($(celula).attr("data-linha")), parseInt($(celula).attr("data-coluna"))];
+            // Acha o objeto da célula a partir do elemento clicado.
+            // .data() já devolve data-linha/data-coluna como números.
+            function celulaDe(el) {
+                const { linha, coluna } = $(el).data();
+                return tabuleiro[linha][coluna];
             }
 
             // ---------- Eventos ----------
@@ -432,13 +348,13 @@
             let ultimoToqueLongo = 0;
 
             $("#board").on("touchstart", ".cell", function() {
-                const [lin, col] = posicao(this);
+                const celula = celulaDe(this);
                 toqueVirouBandeira = false;
                 clearTimeout(temporizadorToque);
                 temporizadorToque = setTimeout(function() {
                     toqueVirouBandeira = true;
                     ultimoToqueLongo = Date.now();
-                    alternarBandeira(lin, col);
+                    alternarBandeira(celula);
                     if (navigator.vibrate) navigator.vibrate(30);
                 }, TEMPO_TOQUE_LONGO);
             });
@@ -451,44 +367,36 @@
             // .on("click", ".cell", fn) usa DELEGAÇÃO: o evento fica no #board
             // e vale para qualquer .cell dentro dele, inclusive as criadas depois
             // (as células são recriadas a cada partida).
-            // Dentro da função, this é a célula clicada.
             $("#board").on("click", ".cell", function() {
                 if (toqueVirouBandeira) { // o clique que vem depois do toque longo
                     toqueVirouBandeira = false;
                     return;
                 }
-                const [lin, col] = posicao(this);
-                jogar(lin, col);
+                jogar(celulaDe(this));
             });
 
-            // Clique direito numa célula -> bandeira.
-            // e.preventDefault() impede o menu do navegador de abrir.
+            // Clique direito -> bandeira. e.preventDefault() impede o menu do navegador.
             $("#board").on("contextmenu", ".cell", function(e) {
                 e.preventDefault();
                 if (Date.now() - ultimoToqueLongo < 1000) return;
-                const [lin, col] = posicao(this);
-                alternarBandeira(lin, col);
+                alternarBandeira(celulaDe(this));
             });
 
-            // Botões de dificuldade: tira "ativa" de todos, coloca no clicado
-            // e começa uma partida nova no nível de data-nivel.
+            // Botões de dificuldade: marca o clicado como ativo e começa uma
+            // partida nova no nível de data-nivel.
             $(".dificuldade").on("click", function() {
                 $(".dificuldade").removeClass("ativa").attr("aria-pressed", "false");
                 $(this).addClass("ativa").attr("aria-pressed", "true");
-                definirNivel($(this).attr("data-nivel"));
+                definirNivel($(this).data("nivel"));
                 iniciarTabuleiro();
             });
 
-            // Botão "Jogar de novo"
             $("#restart").on("click", iniciarTabuleiro);
 
-            // Botão "Zerar" do placar: apaga vitórias/derrotas do nível atual
+            // Zera vitórias/derrotas do nível atual
             $("#zerar-placar").on("click", function() {
                 if (!confirm("Zerar vitórias e derrotas deste nível?")) return;
-                placar[nivelAtual] = {
-                    vitorias: 0,
-                    derrotas: 0
-                };
+                placar[nivelAtual] = { vitorias: 0, derrotas: 0 };
                 salvarPlacar();
                 exibirPlacar();
             });
@@ -525,20 +433,12 @@
                 <h2>Placar</h2>
                 <p class="subtitulo" id="nome-nivel">Iniciante</p>
                 <div class="info">
-                    <span>⏱ Tempo</span>
-                    <strong id="tempo-atual">0.0s</strong>
-                </div>
-                <div class="info">
                     <span>Vitórias</span>
                     <strong id="vitorias">0</strong>
                 </div>
                 <div class="info">
                     <span>Derrotas</span>
                     <strong id="derrotas">0</strong>
-                </div>
-                <div class="info">
-                    <span>Aproveitamento</span>
-                    <strong id="aproveitamento">--</strong>
                 </div>
                 <p class="rodape-painel"><button id="zerar-placar" type="button">Zerar placar do nível</button></p>
             </aside>
@@ -551,9 +451,11 @@
                 Clique num número: abre as vizinhas quando as bandeiras batem
             </p>
         </div>
+
         <div class="board-wrap">
             <div id="board" role="group" aria-label="Campo minado"></div>
         </div>
+
         <div class="lateral-direita">
             <aside class="painel" id="painel-info">
                 <h2>📋 Partida</h2>

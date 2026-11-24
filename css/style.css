@@ -30,7 +30,7 @@
     /* --- Cores semânticas dos valores --- */
     --sucesso: #81c784;        /* vitórias, fim da barra */
     --erro: #e57373;           /* derrotas, bandeira errada */
-    --info: #4fc3f7;           /* tempo, campos abertos, início da barra */
+    --info: #4fc3f7;           /* campos abertos, início da barra */
     --alerta: #ff8a65;         /* bombas marcadas */
 
     /* --- Minas --- */
@@ -322,10 +322,8 @@ h1::after {
     text-shadow: 0 0 8px currentColor; /* brilho de display */
 }
 
-#tempo-atual { color: var(--info); }
 #vitorias { color: var(--sucesso); }
 #derrotas { color: var(--erro); }
-#aproveitamento { color: var(--texto); }
 #campos-abertos { color: var(--info); }
 #bombas-marcadas { color: var(--alerta); }
 #bombas-restantes { color: var(--perigo); }

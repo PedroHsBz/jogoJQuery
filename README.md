@@ -2,15 +2,14 @@
 
 Campo Minado com três níveis (Iniciante, Intermediário e Especialista).
 
-- **Placar (esquerda):** tempo da partida, vitórias, derrotas e aproveitamento
-  do nível escolhido. Fica salvo no navegador (`localStorage`), então continua
+- **Placar (esquerda):** vitórias e derrotas do nível escolhido. Fica salvo no navegador (`localStorage`), então continua
   lá depois de recarregar a página — não precisa de banco de dados.
 - **Partida (direita):** campos abertos, bombas marcadas e bombas restantes,
   com uma barra de progresso.
 
 ## Como rodar
 
-Abra `index.php` por um servidor local, por exemplo o XAMPP:
+Abra `index.html` por um servidor local, por exemplo o XAMPP:
 coloque a pasta em `C:\xampp\htdocs\`, inicie o **Apache** e acesse
 `http://localhost/jogoJQuery/`. Não há banco de dados nem API.
 
@@ -26,6 +25,6 @@ O primeiro clique nunca cai numa mina.
 
 ## Estrutura
 
-- `index.php` — página e toda a lógica do jogo (jQuery)
+- `index.html` — página e toda a lógica do jogo (jQuery)
 - `css/style.css` — visual
 - `img/back.jpg` — fundo
