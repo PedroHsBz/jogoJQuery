@@ -236,8 +236,7 @@
             // e as 8 em volta — assim o primeiro clique nunca perde e sempre abre uma área.
             // Depois conta, para cada célula, quantas minas há ao redor.
             function colocarMinas(segura) {
-                const candidatas = todasCelulas().filter(c =>
-                    Math.abs(c.lin - segura.lin) > 1 || Math.abs(c.col - segura.col) > 1);
+                const candidatas = todasCelulas().filter(c => Math.abs(c.lin - segura.lin) > 1 || Math.abs(c.col - segura.col) > 1);
                 // embaralha só o começo da lista (Fisher-Yates parcial) e pega as primeiras
                 for (let i = 0; i < totalMinas; i++) {
                     const j = i + Math.floor(Math.random() * (candidatas.length - i));
@@ -347,7 +346,7 @@
             let toqueVirouBandeira = false;
             let ultimoToqueLongo = 0;
 
-            $("#board").on("touchstart", ".cell", function() {
+            $("#board").on("", ".cell", function() {
                 const celula = celulaDe(this);
                 toqueVirouBandeira = false;
                 clearTimeout(temporizadorToque);
@@ -420,6 +419,7 @@
 <body>
     <header class="topo">
         <h1>Campo <span class="minado">Minado</span></h1>
+        
         <div id="dificuldades">
             <button class="dificuldade ativa" data-nivel="iniciante" aria-pressed="true">Iniciante</button>
             <button class="dificuldade" data-nivel="intermediario" aria-pressed="false">Intermediário</button>
@@ -458,17 +458,17 @@
 
         <div class="lateral-direita">
             <aside class="painel" id="painel-info">
-                <h2>📋 Partida</h2>
+                <h2> Partida</h2>
                 <div class="info">
                     <span>Campos abertos</span>
                     <strong id="campos-abertos">0 / 0</strong>
                 </div>
                 <div class="info">
-                    <span>🚩 Bombas marcadas</span>
+                    <span>Bombas marcadas</span>
                     <strong id="bombas-marcadas">0</strong>
                 </div>
                 <div class="info">
-                    <span>💣 Bombas restantes</span>
+                    <span>Bombas restantes</span>
                     <strong id="bombas-restantes">0</strong>
                 </div>
                 <div class="progresso" aria-hidden="true">
@@ -477,7 +477,9 @@
             </aside>
         </div>
     </div>
-
+    <footer>
+        <p class="ajuda">Dev by Pedro Henrique da Silva Bazilio</p>
+    </footer>
 </body>
 
 </html>
