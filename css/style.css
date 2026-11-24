@@ -1,0 +1,303 @@
+/* ===== Base ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #222; /* cor reserva caso a imagem não carregue */
+    background-image:
+        radial-gradient(ellipse at center, rgba(10, 13, 18, 0.35) 0%, rgba(10, 13, 18, 0.9) 100%), /* escurece, mais nas bordas */
+        url('../img/back.jpg');
+    background-size: auto, 800px auto;
+    background-attachment: fixed;
+}
+
+/* ===== Topo: título centralizado e dificuldades logo abaixo ===== */
+.topo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding: 20px 0 10px;
+}
+
+h1 {
+    font-family: "Russo One", "Arial Black", sans-serif;
+    font-size: 54px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #e8ecf1;
+    /* relevo de metal: brilho em cima, várias camadas escuras embaixo */
+    text-shadow: 0 -1px 0 rgba(255, 255, 255, 0.4),
+                 0 2px 0 #5a6576,
+                 0 4px 0 #39424f,
+                 0 6px 0 #1f252e,
+                 0 10px 15px rgba(0, 0, 0, 0.9);
+}
+
+/* faixa de perigo embaixo do título */
+h1::after {
+    content: "";
+    display: block;
+    height: 10px;
+    margin-top: 12px;
+    border-radius: 3px;
+    background: repeating-linear-gradient(-45deg, #f5b700 0 12px, #1a1a1a 12px 24px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
+}
+
+.minado {
+    color: #f5b700;
+    text-shadow: 0 -1px 0 rgba(255, 255, 255, 0.4),
+                 0 2px 0 #c48f00,
+                 0 4px 0 #8a6500,
+                 0 6px 0 #4d3800,
+                 0 10px 15px rgba(0, 0, 0, 0.9),
+                 0 0 25px rgba(245, 183, 0, 0.35);
+}
+#dificuldades {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Botões de metal (mesmo estilo das células) */
+.dificuldade,#restart {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #e8ecf1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    cursor: pointer;
+    border: 2px solid #11151b;
+    border-radius: 8px;
+    background: linear-gradient(145deg, #5a6576 0%, #434d5c 55%, #39424f 100%);
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18),  /* brilho em cima */
+                inset 0 -3px 0 rgba(0, 0, 0, 0.35),       /* sombra embaixo */
+                0 4px 10px rgba(0, 0, 0, 0.6);            /* sombra externa */
+    transition: filter 0.12s, transform 0.08s;
+}
+
+.dificuldade:hover,
+#restart:hover {
+    filter: brightness(1.2);
+}
+
+.dificuldade:active,
+#restart:active {
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+}
+
+/* Nível escolhido: metal afundado com detalhe amarelo */
+.dificuldade.ativa {
+    color: #f5b700;
+    background: #1f252e;
+    border-color: #f5b700;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7),
+                0 0 10px rgba(245, 183, 0, 0.35);
+}
+
+.dificuldade.ativa:hover {
+    filter: none;
+}
+
+/* ===== Área do jogo: 3 colunas [timer] [campo] [vazio] — o campo fica no centro ===== */
+.area-jogo {
+    display: grid;
+    grid-template-columns: 1fr auto minmax(0, 1fr);
+    align-items: start;
+    gap: 30px;
+    padding: 20px;
+}
+
+/* Coluna da esquerda: timer, mensagem e botão centralizados entre si */
+.lateral {
+    grid-column: 1;
+    justify-self: end;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+/* ===== Painel de tempo ===== */
+/* placa de metal com uma "tela" escura afundada dentro */
+#painel-tempo {
+    position: relative;
+    min-width: 300px;
+    padding: 18px 20px 50px;
+    color: #e8ecf1;
+    text-align: left;
+    border: 2px solid #11151b;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #5a6576 0%, #434d5c 55%, #39424f 100%);
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18),  /* brilho em cima */
+                inset 0 -3px 0 rgba(0, 0, 0, 0.35),       /* sombra embaixo */
+                0 10px 40px rgba(0, 0, 0, 0.8);           /* sombra externa */
+}
+
+/* parafusos nos 4 cantos */
+#painel-tempo::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 5px 5px, #2a313b 2px, #8792a2 3px, transparent 4px) top left / 10px 10px no-repeat,
+        radial-gradient(circle at 5px 5px, #2a313b 2px, #8792a2 3px, transparent 4px) top right / 10px 10px no-repeat,
+        radial-gradient(circle at 5px 5px, #2a313b 2px, #8792a2 3px, transparent 4px) bottom left / 10px 10px no-repeat,
+        radial-gradient(circle at 5px 5px, #2a313b 2px, #8792a2 3px, transparent 4px) bottom right / 10px 10px no-repeat;
+}
+
+#painel-tempo h2 {
+    font-family: "Russo One", "Arial Black", sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 12px;
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.8);
+}
+
+.tempo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 14px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #9aa6b5;
+    background: #1f252e; /* tela afundada */
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.7);
+}
+
+.tempo:first-of-type { border-radius: 8px 8px 0 0; }
+.tempo:last-of-type { border-radius: 0 0 8px 8px; }
+
+.tempo + .tempo {
+    border-top: 1px dashed #3a4350;
+}
+
+.tempo strong {
+    font-family: monospace;
+    font-size: 20px;
+    text-shadow: 0 0 8px currentColor; /* brilho de display */
+}
+
+#tempo-atual { color: #4fc3f7; }
+#tempo-melhor { color: #81c784; }
+#tempo-pior { color: #e57373; }
+
+/* ===== Mensagem e botão ===== */
+#status {
+    font-size: 20px;
+    color: white;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+
+#status:empty {
+    display: none; /* não ocupa espaço quando não há mensagem */
+}
+
+#restart {
+    font-size: 16px; /* um pouco maior que os de dificuldade */
+}
+
+/* ===== Tabuleiro ===== */
+#board {
+    display: grid;
+    grid-column: 2;
+    gap: 2px;
+    width: max-content;
+    padding: 4px;
+    background: #11151b; /* fresta escura entre as placas */
+    border: 18px solid #333;
+    border-radius: 25px;
+    box-shadow: 0 10px 60px rgba(0, 0, 0, 0.8),       /* sombra externa */
+                inset 0 3px 10px rgba(0, 0, 0, 0.9);  /* sombra interna */
+}
+
+/* Célula fechada: placa de metal em relevo */
+.cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(145deg, #5a6576 0%, #434d5c 55%, #39424f 100%);
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18),  /* brilho em cima */
+                inset 0 -3px 0 rgba(0, 0, 0, 0.35);       /* sombra embaixo */
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    transition: filter 0.12s, transform 0.08s;
+}
+
+.cell:hover {
+    filter: brightness(1.2);
+}
+
+.cell:active {
+    transform: scale(0.94);
+}
+
+/* Célula revelada: metal afundado e escuro */
+.revealed,
+.revealed:hover,
+.revealed:active {
+    background: #1f252e;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+    filter: none;
+    transform: none;
+    cursor: default;
+}
+
+/* Cores dos números */
+.cell[data-n="1"] { color: #5cc8ff; }
+.cell[data-n="2"] { color: #7ee08a; }
+.cell[data-n="3"] { color: #ff6b6b; }
+.cell[data-n="4"] { color: #c792ea; }
+.cell[data-n="5"] { color: #ffb74d; }
+.cell[data-n="6"] { color: #4dd0e1; }
+.cell[data-n="7"] { color: #f06292; }
+.cell[data-n="8"] { color: #e0e0e0; }
+
+.mine,
+.mine:hover {
+    background: radial-gradient(circle, #a52a2a 0%, #4a0f0f 100%);
+}
+
+/* Bandeira: faixa de perigo amarelo e preto */
+.flag,
+.flag:hover {
+    background: repeating-linear-gradient(-45deg, #f5b700 0 8px, #1a1a1a 8px 16px);
+    box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.45);
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* ===== Tela estreita: timer em cima e campo embaixo ===== */
+@media (max-width: 1100px) {
+    .area-jogo {
+        grid-template-columns: 1fr;
+        justify-items: center;
+    }
+
+    .lateral {
+        justify-self: center;
+    }
+
+    #board {
+        grid-column: 1;
+    }
+}
